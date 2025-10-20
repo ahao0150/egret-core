@@ -1,0 +1,15 @@
+{
+  "name": "qhgame",
+  "version": "1.0.0",
+  "description": "",
+  "main": "egret.qhgame.js",
+  "scripts": {
+    "serve": "gamebuilder watch",
+    "build": "gamebuilder build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@qihoo/seapp-builder": "^1.1.8"
+  }
+}

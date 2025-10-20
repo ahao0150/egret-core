@@ -1,0 +1,12 @@
+<view class="canvas-element">
+  <canvas 
+  id="canvas" 
+  type="webgl" 
+  style="width:678rpx;height:600rpx;" 
+  onTouchStart="onTouchStarta"
+  onTouchCancel="onTouchCancela"
+  onTouchEnd="onTouchEnda"
+  onTouchMove="onTouchMovea"
+  onReady="canvasOnReady"
+  ></canvas>
+</view>

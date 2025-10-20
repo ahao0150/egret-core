@@ -1,0 +1,15 @@
+{
+  "miniprogramRoot": "client",
+  "pluginRoot": "widget",
+  "compileType": "plugin",
+  "include": [
+    "**/resource/**/*.ktx",
+    "**/resource/**/*.json",
+    "**/resource/**/*.txt",
+    "**/resource/**/*.fnt",
+    "**/resource/**/*.bin",
+    "**/resource/**/*.ab",
+    "**/resource/**/*.mp3",
+    "**/resource/**/*.mp4"
+  ]
+}

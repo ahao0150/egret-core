@@ -1,0 +1,14 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "plugins": {
+    "egretDemo": {
+      "version": "dev",
+      "provider": "{{currentPluginId}}"
+    }
+  },
+  "window": {
+    "defaultTitle": "My Widget"
+  }
+}
