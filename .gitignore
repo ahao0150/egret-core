@@ -1,12 +1,14 @@
 bin-debug/
 node_modules/
 .idea/
+IFLOW.md
+__pycache__/
 tools/node_modules
 src/egret/**/*.js
 src/egret/**/**/*.js
 src/extension/**/*.js
 src/extension/**/**/*.js
-
+publish/
 tools/nodejs/buildTS.local
 *.local
 *.map
