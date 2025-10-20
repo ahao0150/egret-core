@@ -1,5 +1,5 @@
 {
   "project_path": "C:/Users/Administrator/Documents/EgretProjects/test",
-  "runtime_path": "E:/work/egret-core/targets/egret-baidugame-support-0.3.2",
-  "target_platform": "baidugame"
+  "runtime_path": "E:/work/egret-core/targets/egret-wxgame-support-1.3.7",
+  "target_platform": "web"
 }

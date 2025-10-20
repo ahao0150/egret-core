@@ -38,6 +38,9 @@ class EgretPublisher:
         # 初始化时自动加载支持的平台列表
         self.on_engine_path_changed()
         
+        # 初始化Runtime目录的启用状态
+        self.on_platform_changed()
+        
     def create_widgets(self):
         # 主框架
         main_frame = ttk.Frame(self.root, padding="10")
@@ -61,11 +64,11 @@ class EgretPublisher:
         runtime_label = ttk.Label(main_frame, text="Runtime目录:")
         runtime_label.grid(row=2, column=0, sticky=tk.W, pady=5)
         
-        runtime_entry = ttk.Entry(main_frame, textvariable=self.runtime_path, width=50)
-        runtime_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
+        self.runtime_entry = ttk.Entry(main_frame, textvariable=self.runtime_path, width=50)
+        self.runtime_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
         
-        runtime_button = ttk.Button(main_frame, text="浏览...", command=self.browse_runtime)
-        runtime_button.grid(row=2, column=2, pady=5, padx=(5, 0))
+        self.runtime_button = ttk.Button(main_frame, text="浏览...", command=self.browse_runtime)
+        self.runtime_button.grid(row=2, column=2, pady=5, padx=(5, 0))
         
         # 监听Runtime路径变化，自动读取target.json
         self.runtime_path.trace_add("write", lambda *args: self.on_runtime_path_changed())
@@ -78,6 +81,9 @@ class EgretPublisher:
                                         values=self.platforms, state="readonly", width=47)
         self.platform_combobox.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
         self.platform_combobox.set("web")  # 默认选择web平台
+        
+        # 监听平台变化，控制Runtime目录选择的启用状态
+        self.target_platform.trace_add("write", lambda *args: self.on_platform_changed())
         
         # 发布按钮
         self.publish_button = ttk.Button(main_frame, text="开始发布", command=self.publish)
@@ -122,6 +128,18 @@ class EgretPublisher:
         directory = filedialog.askdirectory(title="选择白鹭项目目录")
         if directory:
             self.project_path.set(directory)
+    
+    def on_platform_changed(self):
+        """平台选择变化时，控制Runtime目录的启用状态"""
+        target = self.target_platform.get()
+        if target == "web":
+            # web平台禁用Runtime目录选择
+            self.runtime_entry.config(state="disabled")
+            self.runtime_button.config(state="disabled")
+        else:
+            # 其他平台启用Runtime目录选择
+            self.runtime_entry.config(state="normal")
+            self.runtime_button.config(state="normal")
     
     def on_engine_path_changed(self):
         """引擎路径变化时，自动读取支持的平台列表"""
@@ -372,12 +390,13 @@ class EgretPublisher:
    （包含egretProperties.json的目录）
 
 2. Runtime目录（可选）：
-   如果需要发布到特定平台（如小游戏），
-   可能需要指定对应的Runtime支持目录
+   - web平台：不需要Runtime目录
+   - 其他平台：如需发布到特定平台（如小游戏），
+     需要指定对应的Runtime支持目录
 
 3. 目标平台：
    选择要发布的目标平台类型
-   - web: 网页版本
+   - web: 网页版本（无需Runtime）
    - native: 原生版本
    - wxgame: 微信小游戏
    - tbgame: 淘宝小游戏
@@ -433,14 +452,14 @@ class EgretPublisher:
             messagebox.showerror("错误", "引擎目录不存在")
             return
             
-        # 检查Runtime路径（如果指定了的话）
-        if runtime_path and not os.path.exists(runtime_path):
+        # 检查Runtime路径（如果指定了的话，且不是web平台）
+        if target != "web" and runtime_path and not os.path.exists(runtime_path):
             messagebox.showerror("错误", "Runtime目录不存在")
             return
             
-        # 检查是否需要输入动态参数
+        # 检查是否需要输入动态参数（web平台不需要）
         dynamic_params = {}
-        if self.target_config_data and "args" in self.target_config_data:
+        if target != "web" and self.target_config_data and "args" in self.target_config_data:
             args = self.target_config_data.get("args", [])
             if args:
                 # 显示参数输入对话框
@@ -511,13 +530,19 @@ class EgretPublisher:
             self.progress_text.insert(tk.END, f"步骤1: 删除历史构建内容\n")
             self.clean_build_output(project_path, target)
             
-            # 2. 检查并创建目标平台的配置文件
-            self.progress_text.insert(tk.END, f"步骤2: 创建目标平台配置文件\n")
-            self.create_target_config_file(project_path, target, runtime_path)
+            # 2. 检查并创建目标平台的配置文件（web平台跳过）
+            if target != "web":
+                self.progress_text.insert(tk.END, f"步骤2: 创建目标平台配置文件\n")
+                self.create_target_config_file(project_path, target, runtime_path)
+            else:
+                self.progress_text.insert(tk.END, f"步骤2: web平台跳过配置文件创建\n")
             
-            # 3. 复制模板文件到编译目录（如果Runtime目录中有模板）
-            self.progress_text.insert(tk.END, f"步骤3: 复制模板文件\n")
-            self.copy_template_files_to_compile_dir(project_path, target, runtime_path)
+            # 3. 复制模板文件到编译目录（如果Runtime目录中有模板，web平台跳过）
+            if target != "web":
+                self.progress_text.insert(tk.END, f"步骤3: 复制模板文件\n")
+                self.copy_template_files_to_compile_dir(project_path, target, runtime_path)
+            else:
+                self.progress_text.insert(tk.END, f"步骤3: web平台跳过模板文件复制\n")
             
             # 设置环境变量（必须在构建命令前设置）
             env = os.environ.copy()
@@ -554,10 +579,14 @@ class EgretPublisher:
             self.progress_text.insert(tk.END, f"步骤4: 执行Node.js构建脚本\n")
             
             # 构建Node.js命令 - 使用绝对路径
-            cmd = ["node", egret_script, "publish", "--target", target, "--projectDir", project_path]
+            # web平台不需要传递--target参数
+            if target == "web":
+                cmd = ["node", egret_script, "publish", "--projectDir", project_path]
+            else:
+                cmd = ["node", egret_script, "publish", "--target", target, "--projectDir", project_path]
             
-            # 如果指定了runtime目录，设置EGRET_RUNTIME环境变量
-            if runtime_path:
+            # 如果指定了runtime目录，设置EGRET_RUNTIME环境变量（web平台不需要）
+            if runtime_path and target != "web":
                 # 检查runtime目录中是否包含target相关的支持文件
                 target_support_dir = os.path.join(runtime_path, f"egret-{target}-support")
                 if os.path.exists(target_support_dir):
@@ -650,14 +679,17 @@ class EgretPublisher:
                 self.progress_text.insert(tk.END, "\n" + "=" * 50 + "\n")
                 self.progress_text.insert(tk.END, "发布成功完成!\n")
                 
-                # 步骤5: 应用参数替换
-                self.progress_text.insert(tk.END, f"步骤5: 应用参数替换\n")
-                if self.target_config_data:
-                    self.progress_text.insert(tk.END, f"正在应用参数替换...\n")
-                    # 找到实际的输出目录进行参数替换
-                    actual_output_dir = self.find_actual_output_directory(project_path, target, output_text)
-                    if actual_output_dir and os.path.exists(actual_output_dir):
-                        self.apply_dynamic_params_to_template(actual_output_dir, project_path, dynamic_params)
+                # 步骤5: 应用参数替换（web平台跳过）
+                if target != "web":
+                    self.progress_text.insert(tk.END, f"步骤5: 应用参数替换\n")
+                    if self.target_config_data:
+                        self.progress_text.insert(tk.END, f"正在应用参数替换...\n")
+                        # 找到实际的输出目录进行参数替换
+                        actual_output_dir = self.find_actual_output_directory(project_path, target, output_text)
+                        if actual_output_dir and os.path.exists(actual_output_dir):
+                            self.apply_dynamic_params_to_template(actual_output_dir, project_path, dynamic_params)
+                else:
+                    self.progress_text.insert(tk.END, f"步骤5: web平台跳过参数替换\n")
                 
                 # 尝试从输出中找到实际的输出目录
                 actual_output_dir = self.find_actual_output_directory(project_path, target, output_text)
